@@ -7,7 +7,7 @@ struct RegionHeader {
 	size_t hash;
 	RegionHeader *prev;
 	RegionHeader *next;
-};
+} __attribute__ ((aligned (8)));
 
 void *myalloc(size_t);
 void myfree(void*);

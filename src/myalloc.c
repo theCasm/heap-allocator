@@ -7,11 +7,7 @@
 static RegionHeader *HEAD = NULL;
 static RegionHeader *TAIL = NULL;
 
-static size_t hash(void *addr)
-{
-	// TODO: actually compute hash
-	return 0x1B16B011;
-}
+extern size_t hash(void *addr);
 
 void *myalloc(size_t size)
 {
