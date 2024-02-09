@@ -9,15 +9,32 @@ static RegionHeader *TAIL = NULL;
 
 extern size_t hash(void *addr);
 
+// returns header of appropriate size and hash
+static RegionHeader *findHeader(size_t size)
+{
+	for (RegionHeader *curr = HEAD; curr != NULL; curr = curr->next) {
+		if (curr->inUse) {
+			continue;
+		}
+
+		if (curr->size >= size) {
+			// TODO: split chunk
+			return curr;
+		}
+	}
+
+	RegionHeader *res = (RegionHeader *)mmap(NULL,
+		size + sizeof(RegionHeader), PROT_READ | PROT_WRITE,
+		MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	res->size = size;
+	res->hash = hash(res);
+	return res;
+}
+
 void *myalloc(size_t size)
 {
-	RegionHeader *mem = (RegionHeader *)mmap(NULL,
-		size + sizeof(RegionHeader), PROT_READ | PROT_WRITE,
-		MAP_ANONYMOUS | MAP_PRIVATE,
-		-1, 0);
-	
-	mem->size = size;
-	mem->hash = hash(mem);
+	RegionHeader *mem = findHeader(size);	
+	mem->inUse |= 1;
 	mem->next = NULL;
 
 	if (HEAD == NULL) {
@@ -38,23 +55,10 @@ void myfree(void *ptr)
 		(RegionHeader *)((uintptr_t)ptr - sizeof(RegionHeader));
 
 	if (hash((void*)curr) != curr->hash) {
-		// if u try to free bad mem, u should want it to fail so u know
+		// trying to free bad mem is fatal error
 		fputs("Bad free\n", stderr);
 		exit(-1);
 	}
 
-	// TODO: preserve memory for re-use
-
-	if (curr->prev != NULL) {
-		curr->prev->next = curr->next;
-	} else {
-		HEAD = curr->next;
-	}
-	if (curr->next != NULL) {
-		curr->next->prev = curr->prev;
-	} else {
-		TAIL = curr->prev;
-	}
-
-	munmap(curr, curr->size + sizeof(RegionHeader));
+	curr->inUse &= 0;
 }

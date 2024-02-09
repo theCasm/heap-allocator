@@ -5,6 +5,7 @@ typedef struct RegionHeader RegionHeader;
 struct RegionHeader {
 	size_t size;
 	size_t hash;
+	int inUse;
 	RegionHeader *prev;
 	RegionHeader *next;
 } __attribute__ ((aligned (8)));
